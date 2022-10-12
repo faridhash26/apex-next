@@ -10,14 +10,17 @@ import axios from "axios";
 const THEChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 export default function Home() {
+  const [isLoading, setIsLoading] = useState(false);
   const [theData, setTheData] = useState([]);
   const [thenewConvertedData, setthenewConvertedData] = useState([]);
   const handleGet = useCallback(async () => {
     try {
+      setIsLoading(true);
       const res = await axios.get(
         "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h"
       );
-      setTheData(res.data);
+      setTheData(handleUpdateData(res.data ? res.data : []));
+      setIsLoading(false);
     } catch (error) {}
   }, []);
 
@@ -25,26 +28,23 @@ export default function Home() {
     handleGet();
   }, [handleGet]);
   // console.log("data", theData);
-  const handleUpdateData = () => {
+  const handleUpdateData = (originalData = []) => {
     let newarr = [];
-    if (theData.length != 0) {
+    if (originalData != 0) {
       for (let i = 0; i < 20; i++) {
         let convertArr = [
-          Number(theData[i][1]),
-          Number(theData[i][2]),
-          Number(theData[i][3]),
-          Number(theData[i][4]),
+          Number(originalData[i][1]),
+          Number(originalData[i][2]),
+          Number(originalData[i][3]),
+          Number(originalData[i][4]),
         ];
-        newarr.push({ x: new Date(theData[i][0]), y: convertArr });
+        newarr.push({ x: new Date(originalData[i][0]), y: convertArr });
       }
     }
     return newarr;
   };
-  useEffect(() => {
-    setthenewConvertedData(handleUpdateData());
-  }, []);
 
-  console.log("new data ", handleUpdateData());
+  console.log("new data ", theData);
   const theOption = {
     series: [
       {
@@ -76,7 +76,7 @@ export default function Home() {
         options={theOption.options}
         series={[
           {
-            data: thenewConvertedData,
+            data: theData,
           },
         ]}
         type="candlestick"
